@@ -65,7 +65,7 @@ timeIntervalWithMostNumOfSteps <- avgStepsPerTimeInterval[which.max(avgStepsPerT
 
 The 5-minute interval, **`r timeIntervalWithMostNumOfSteps`**, on average across all the days in the dataset, contains the most number of steps.
 
-## Inputing missing values
+## Imputing missing values
 
 ### 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
@@ -78,13 +78,92 @@ There are **`r numberOfRowsWithNas`** rows with missing values in the dataset.
 
 ### 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-Loop through
-```{r echo = TRUE}
+We can find the rows which contains missing values for the steps column in the dataset. Then for each of those rows, we get the time interval column to query the avgStepsPerTimeInterval dataset, which we had computed earlier, for the average number of steps for that 5-minute interval. We then use the average number of steps value to fill the missing values.
 
-```
 
 ### 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
+```{r echo = TRUE}
+# Prepare a data frame for replacing the missing values
+activityDataWithoutNa <- activityData
+rowsWithStepsNa <- which(is.na(activityDataWithoutNa$steps))
+
+for (rowIndex in rowsWithStepsNa) {
+  
+  # Get the interval to query for average steps taken
+  intervalWithNaSteps <- activityData$interval[rowIndex]
+  avgStepsPerTimeIntervalRowIndex = which(avgStepsPerTimeInterval$interval == intervalWithNaSteps)
+  activityDataWithoutNa$steps[rowIndex] <- avgStepsPerTimeInterval[avgStepsPerTimeIntervalRowIndex, ]$steps
+  
+}
+
+```
+
+After the above code is run, we run the following code to determine if the missing values are gone:
+
+```{r echo = TRUE}
+numberOfRowsWithNas <- sum(
+    (is.na(activityDataWithoutNa$steps) 
+     | is.na(activityDataWithoutNa$date) 
+     | is.na(activityDataWithoutNa$interval))
+    ) 
+```
+
+There are **`r numberOfRowsWithNas`** rows with missing values in the filled dataset.
+
+
+
 ### 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
+Make a histogram from the new dataset.
+
+```{r}
+# Creates a table which counts the total number of steps taken for each each day
+newTotalStepsTakenPerDay <- aggregate(steps ~ date, data = activityDataWithoutNa, FUN = 'sum', na.exclude = T)
+# Make the histogram
+hist(newTotalStepsTakenPerDay$steps, xlab="Steps per day", main="Total number of steps taken each day from new dataset")
+```
+
+``` {r echo = TRUE}
+meanOfNewTotalNumSteps <- mean(newTotalStepsTakenPerDay$steps)
+medianOfNewTotalNumSteps <- median(newTotalStepsTakenPerDay$steps)
+```
+
+The mean of the total number of steps is `r meanOfNewTotalNumSteps`.
+
+The mean of the total number of steps is `r medianOfNewTotalNumSteps`.
+
+The impact of imputing missing data to the datasets had increased the total daily number of steps. This had caused the frequency for the 10000 to 15000 range to increase. The mean and median had been affected slightly as well.
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Convert the date column to date type
+
+```{r echo = TRUE}
+activityDataWithoutNa$date <- as.Date(activityDataWithoutNa$date, format = '%Y-%m-%d' ) 
+```
+
+### 1. Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```{r echo = TRUE}
+days <- weekdays(activityDataWithoutNa$date)
+dayTypeVector <- vector()
+
+for (index in 1:length(days)) {
+  if (days[index] == 'Saturday' || days[index] == 'Sunday') {
+    dayTypeVector[index] <- 'Weekend'
+  }
+  else {
+    dayTypeVector[index] <- 'Weekday'
+  }
+}
+
+# Assign the day type into the dataset
+dayTypeFactor <- factor(dayTypeVector)
+activityDataWithoutNa$dayType <- dayTypeFactor
+
+```
+
+### 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+
