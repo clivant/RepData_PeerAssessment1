@@ -166,4 +166,21 @@ activityDataWithoutNa$dayType <- dayTypeFactor
 
 ### 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
 
+```{r echo = TRUE}
+stepsPeerWeekTypePerInterval <- aggregate(steps ~ dayType + interval, data = activityDataWithoutNa, FUN = 'mean')
+library(lattice)
+xyplot(
+  steps ~ interval | dayType
+  , data = stepsPeerWeekTypePerInterval
+  , layout = c(1, 2)
+  , type='l'
+  )
+```
 
+#### Observation 1: More people took more steps early in the weekdays than on weekends
+
+As seen from the plot, we can note that on the average, there were more steps taken from the 700 time interval on weekdays than on weekends. This is probably due to more people getting to work in the mornings of weekdays than in the mornings of weekends. 
+
+#### Observation 2: More people took more steps in the morning to evening period in the weekends than on weekdays.
+
+Also, from the 1000 to 2000 time intervals, we saw more steps taken during weekends than on weekdays. This is probably due to people getting more involved activities that requires walking in weekends (for eg, exercising or shopping), as opposed to people staying put at one location during weekdays. This could be because weekdays are work days for most people when most people are not moving around too much.   
